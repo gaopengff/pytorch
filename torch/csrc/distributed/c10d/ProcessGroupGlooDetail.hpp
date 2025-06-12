@@ -291,6 +291,18 @@ class AsyncAllreduceWork : public ProcessGroupGloo::AsyncWork {
     gloo::AllreduceOptions opts(context);
     opts.setReduceFunction(getFunction(scalarType, reduceOp));
     opts.setTag(tag);
+    opts.setAlgorithm(gloo::AllreduceOptions::Algorithm::SHM);
+    switch (scalarType)
+    {
+    case ::at::ScalarType::Float:
+        opts.setScalarType(gloo::AllreduceOptions::ScalarType::FLOAT);
+        break;
+    case ::at::ScalarType::Half:
+        opts.setScalarType(gloo::AllreduceOptions::ScalarType::HALF);
+        break;
+    default:
+        break;
+    }
     GENERATE_ALL_TYPES(scalarType, setOutputs, opts, tensors);
     gloo::allreduce(opts);
 

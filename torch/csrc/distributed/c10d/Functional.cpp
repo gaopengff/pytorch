@@ -74,16 +74,16 @@ at::Tensor& all_reduce_(
     // NOLINTNEXTLINE(performance-unnecessary-value-param)
     std::string group_name) {
   // replace with shm_all_reduce_
-  return shm_all_reduce_(input, std::move(reduce_op), std::move(group_name));
+  // return shm_all_reduce_(input, std::move(reduce_op), std::move(group_name));
 
-  // c10d::AllreduceOptions opts;
-  // opts.reduceOp = to_reduce_op(reduce_op);
+  c10d::AllreduceOptions opts;
+  opts.reduceOp = to_reduce_op(reduce_op);
 
-  // std::vector<at::Tensor> inputs{input};
-  // auto group = c10d::resolve_process_group(group_name);
-  // auto work = group->allreduce(inputs, opts);
-  // c10d::register_work(input, work);
-  // return input;
+  std::vector<at::Tensor> inputs{input};
+  auto group = c10d::resolve_process_group(group_name);
+  auto work = group->allreduce(inputs, opts);
+  c10d::register_work(input, work);
+  return input;
 }
 
 at::Tensor all_reduce(
