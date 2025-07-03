@@ -104,6 +104,7 @@ at::Tensor& all_reduce_(
     // NOLINTNEXTLINE(performance-unnecessary-value-param)
     std::string group_name) {
   // replace with shm_all_reduce_
+  //printf("Before call shm_allreduce\n");
   return shm_all_reduce_(input, std::move(reduce_op), std::move(group_name));
 
   // c10d::AllreduceOptions opts;
@@ -283,13 +284,13 @@ TORCH_LIBRARY(_c10d_functional, m) {
   m.def(
       "shm_all_reduce(Tensor input, str reduce_op, str group_name) -> Tensor",
       torch::dispatch(
-          c10::DispatchKey::CompositeExplicitAutograd, ::shm_all_reduce),
+          c10::DispatchKey::CompositeExplicitAutograd, c10d::shm_all_reduce),
       {at::Tag::pt2_compliant_tag});
 
   m.def(
       "shm_all_reduce_(Tensor(a!) input, str reduce_op, str group_name) -> Tensor(a!)",
       torch::dispatch(
-          c10::DispatchKey::CompositeExplicitAutograd, ::shm_all_reduce_),
+          c10::DispatchKey::CompositeExplicitAutograd, c10d::shm_all_reduce_),
       {at::Tag::pt2_compliant_tag});
 
   m.def(
