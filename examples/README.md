@@ -19,6 +19,7 @@ Install torch-ccl
 git clone https://github.com/intel/torch-ccl.git
 cd pytorch
 git checkout v2.7.0+cpu
+git apply torchccl_fix_xpu.patch
 python setup.py install
 ```
 

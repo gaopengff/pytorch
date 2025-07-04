@@ -1,0 +1,312 @@
+diff --git a/oneccl_bindings_for_pytorch/__init__.py b/oneccl_bindings_for_pytorch/__init__.py
+index 96cf249..949d8c8 100644
+--- a/oneccl_bindings_for_pytorch/__init__.py
++++ b/oneccl_bindings_for_pytorch/__init__.py
+@@ -16,13 +16,13 @@ def set_env_default(env, key, value):
+ from .version import __version__, git_version
+ from . import _C as ccl_lib
+ 
+-if hasattr(torch, 'xpu') and torch.xpu._is_compiled():
+-    try:
+-        # load the CCL/XPU library
+-        import ctypes
+-        my_c_library = ctypes.cdll.LoadLibrary(os.path.join(cwd, "lib/liboneccl_bindings_for_pytorch_xpu.so"))
+-    except OSError as e:
+-        warnings.warn(f"Warning: Cannot load xpu CCL. CCL doesn't work for XPU device due to {e}")
++# if hasattr(torch, 'xpu'):# and torch.xpu._is_compiled():
++#     try:
++#         # load the CCL/XPU library
++#         import ctypes
++#         my_c_library = ctypes.cdll.LoadLibrary(os.path.join(cwd, "lib/liboneccl_bindings_for_pytorch_xpu.so"))
++#     except OSError as e:
++#         warnings.warn(f"Warning: Cannot load xpu CCL. CCL doesn't work for XPU device due to {e}")
+ 
+ __all__ = []
+ __all__ += [name for name in dir(ccl_lib)
+diff --git a/src/ProcessGroupCCL.cpp b/src/ProcessGroupCCL.cpp
+index ae41456..da558c3 100644
+--- a/src/ProcessGroupCCL.cpp
++++ b/src/ProcessGroupCCL.cpp
+@@ -83,9 +83,9 @@ std::tuple<std::vector<at::Tensor>, c10::intrusive_ptr<C10D_Work>> broadcast_xpu
+ }
+ #endif
+ 
+-TORCH_LIBRARY_IMPL(c10d, XPU, m) {
+-  m.impl("broadcast_", broadcast_xpu_);
+-}
++// TORCH_LIBRARY_IMPL(c10d, XPU, m) {
++//   m.impl("broadcast_", broadcast_xpu_);
++// }
+ 
+ #if TORCH_VERSION_MAJOR > 1 && TORCH_VERSION_MINOR >= 1
+ // TODO: Enable sparse all_reduce https://github.com/pytorch/pytorch/pull/103916
+@@ -94,6 +94,7 @@ std::tuple<std::vector<at::Tensor>, c10::intrusive_ptr<C10D_Work>> allreduce_xpu
+     const c10::intrusive_ptr<ProcessGroup>& process_group,
+     const c10::intrusive_ptr<ReduceOp>& reduce_op,
+     const c10::optional<at::Tensor>& sparse_indices,
++    bool async_op,
+     int64_t timeout) {
+   auto tensor_vec = tensors.vec();
+   auto work =
+@@ -115,6 +116,7 @@ std::tuple<std::vector<at::Tensor>, c10::intrusive_ptr<C10D_Work>> allreduce_xpu
+     at::TensorList tensors,
+     const c10::intrusive_ptr<ProcessGroup>& process_group,
+     const c10::intrusive_ptr<ReduceOp>& reduce_op,
++    bool async_op,
+     int64_t timeout) {
+   auto tensor_vec = tensors.vec();
+   auto work =
+@@ -132,14 +134,15 @@ std::tuple<std::vector<at::Tensor>, c10::intrusive_ptr<C10D_Work>> allreduce_xpu
+ }
+ #endif
+ 
+-TORCH_LIBRARY_IMPL(c10d, XPU, m) {
+-  m.impl("allreduce_", allreduce_xpu_);
+-}
++// TORCH_LIBRARY_IMPL(c10d, XPU, m) {
++//   m.impl("allreduce_", allreduce_xpu_);
++// }
+ 
+ c10::intrusive_ptr<C10D_Work> allreduce_coalesced_xpu_(
+     at::TensorList tensors,
+     const c10::intrusive_ptr<ProcessGroup>& process_group,
+     const c10::intrusive_ptr<ReduceOp>& reduce_op,
++    bool async_op,
+     int64_t timeout) {
+   auto tensor_vec = tensors.vec();
+   AllreduceCoalescedOptions opts = AllreduceCoalescedOptions{};
+@@ -150,9 +153,9 @@ c10::intrusive_ptr<C10D_Work> allreduce_coalesced_xpu_(
+       ->allreduce_coalesced(tensor_vec, opts);
+ }
+ 
+-TORCH_LIBRARY_IMPL(c10d, XPU, m) {
+-  m.impl("allreduce_coalesced_", allreduce_coalesced_xpu_);
+-}
++// TORCH_LIBRARY_IMPL(c10d, XPU, m) {
++//   m.impl("allreduce_coalesced_", allreduce_coalesced_xpu_);
++// }
+ 
+ c10::intrusive_ptr<C10D_Work> reduce_xpu_(
+     at::TensorList tensors,
+@@ -160,6 +163,7 @@ c10::intrusive_ptr<C10D_Work> reduce_xpu_(
+     const c10::intrusive_ptr<ReduceOp>& reduce_op,
+     int64_t root_rank,
+     int64_t root_tensor,
++    bool async_op,
+     int64_t timeout) {
+   auto tensor_vec = tensors.vec();
+   return process_group->getBackend(c10::DeviceType::XPU)
+@@ -172,9 +176,9 @@ c10::intrusive_ptr<C10D_Work> reduce_xpu_(
+               std::chrono::milliseconds(timeout)});
+ }
+ 
+-TORCH_LIBRARY_IMPL(c10d, XPU, m) {
+-  m.impl("reduce_", reduce_xpu_);
+-}
++// TORCH_LIBRARY_IMPL(c10d, XPU, m) {
++//   m.impl("reduce_", reduce_xpu_);
++// }
+ 
+ std::tuple<std::vector<std::vector<at::Tensor>>, c10::intrusive_ptr<C10D_Work>>
+ allgather_xpu_(
+@@ -197,9 +201,9 @@ allgather_xpu_(
+           output_tensors, work);
+ }
+ 
+-TORCH_LIBRARY_IMPL(c10d, XPU, m) {
+-  m.impl("allgather_", allgather_xpu_);
+-}
++// TORCH_LIBRARY_IMPL(c10d, XPU, m) {
++//   m.impl("allgather_", allgather_xpu_);
++// }
+ 
+ // pytorch 2.2 above
+ #if TORCH_VERSION_MAJOR > 1 && TORCH_VERSION_MINOR > 1
+@@ -227,9 +231,9 @@ std::tuple<at::Tensor, c10::intrusive_ptr<C10D_Work>> _allgather_base_xpu_(
+ }
+ #endif
+ 
+-TORCH_LIBRARY_IMPL(c10d, XPU, m) {
+-  m.impl("_allgather_base_", _allgather_base_xpu_);
+-}
++// TORCH_LIBRARY_IMPL(c10d, XPU, m) {
++//   m.impl("_allgather_base_", _allgather_base_xpu_);
++// }
+ 
+ c10::intrusive_ptr<c10d::Work> allgather_into_tensor_coalesced_xpu_(
+     at::TensorList outputs,
+@@ -242,9 +246,9 @@ c10::intrusive_ptr<c10d::Work> allgather_into_tensor_coalesced_xpu_(
+             ->allgather_into_tensor_coalesced(output_vec, input_vec);
+ }
+ 
+-TORCH_LIBRARY_IMPL(c10d, XPU, m) {
+-  m.impl("allgather_into_tensor_coalesced_", allgather_into_tensor_coalesced_xpu_);
+-}
++// TORCH_LIBRARY_IMPL(c10d, XPU, m) {
++//   m.impl("allgather_into_tensor_coalesced_", allgather_into_tensor_coalesced_xpu_);
++// }
+ 
+ c10::intrusive_ptr<C10D_Work> allgather_coalesced_xpu_(
+     const std::vector<std::vector<at::Tensor>>& output_lists,
+@@ -257,9 +261,9 @@ c10::intrusive_ptr<C10D_Work> allgather_coalesced_xpu_(
+           input_list_vec);
+ }
+ 
+-TORCH_LIBRARY_IMPL(c10d, XPU, m) {
+-  m.impl("allgather_coalesced_", allgather_coalesced_xpu_);
+-}
++// TORCH_LIBRARY_IMPL(c10d, XPU, m) {
++//   m.impl("allgather_coalesced_", allgather_coalesced_xpu_);
++// }
+ 
+ c10::intrusive_ptr<C10D_Work> gather_xpu_(
+     const std::vector<std::vector<at::Tensor>>& output_tensors,
+@@ -275,9 +279,9 @@ c10::intrusive_ptr<C10D_Work> gather_xpu_(
+           GatherOptions{root_rank, std::chrono::milliseconds(timeout)});
+ }
+ 
+-TORCH_LIBRARY_IMPL(c10d, XPU, m) {
+-  m.impl("gather_", gather_xpu_);
+-}
++// TORCH_LIBRARY_IMPL(c10d, XPU, m) {
++//   m.impl("gather_", gather_xpu_);
++// }
+ 
+ // pytorch 2.2 above
+ #if TORCH_VERSION_MAJOR > 1 && TORCH_VERSION_MINOR > 1
+@@ -319,9 +323,9 @@ std::tuple<std::vector<at::Tensor>, c10::intrusive_ptr<C10D_Work>> scatter_xpu_(
+ }
+ #endif
+ 
+-TORCH_LIBRARY_IMPL(c10d, XPU, m) {
+-  m.impl("scatter_", scatter_xpu_);
+-}
++// TORCH_LIBRARY_IMPL(c10d, XPU, m) {
++//   m.impl("scatter_", scatter_xpu_);
++// }
+ 
+ std::tuple<std::vector<at::Tensor>, c10::intrusive_ptr<C10D_Work>>
+ reduce_scatter_xpu_(
+@@ -343,9 +347,9 @@ reduce_scatter_xpu_(
+       output_tensors_vec, work);
+ }
+ 
+-TORCH_LIBRARY_IMPL(c10d, XPU, m) {
+-  m.impl("reduce_scatter_", reduce_scatter_xpu_);
+-}
++// TORCH_LIBRARY_IMPL(c10d, XPU, m) {
++//   m.impl("reduce_scatter_", reduce_scatter_xpu_);
++// }
+ 
+ // pytorch 2.2 above
+ #if TORCH_VERSION_MAJOR > 1 && TORCH_VERSION_MINOR > 1
+@@ -385,9 +389,9 @@ std::tuple<at::Tensor, c10::intrusive_ptr<C10D_Work>> _reduce_scatter_base_xpu_(
+ }
+ #endif
+ 
+-TORCH_LIBRARY_IMPL(c10d, XPU, m) {
+-  m.impl("_reduce_scatter_base_", _reduce_scatter_base_xpu_);
+-}
++// TORCH_LIBRARY_IMPL(c10d, XPU, m) {
++//   m.impl("_reduce_scatter_base_", _reduce_scatter_base_xpu_);
++// }
+ 
+ c10::intrusive_ptr<C10D_Work> reduce_scatter_tensor_coalesced_xpu_(
+     at::TensorList outputs,
+@@ -405,9 +409,9 @@ c10::intrusive_ptr<C10D_Work> reduce_scatter_tensor_coalesced_xpu_(
+         *reduce_op.get(), std::chrono::milliseconds(timeout)});
+ }
+ 
+-TORCH_LIBRARY_IMPL(c10d, XPU, m) {
+-  m.impl("reduce_scatter_tensor_coalesced_", reduce_scatter_tensor_coalesced_xpu_);
+-}
++// TORCH_LIBRARY_IMPL(c10d, XPU, m) {
++//   m.impl("reduce_scatter_tensor_coalesced_", reduce_scatter_tensor_coalesced_xpu_);
++// }
+ 
+ c10::intrusive_ptr<C10D_Work> alltoall_base_xpu_(
+     at::Tensor& output,
+@@ -425,9 +429,9 @@ c10::intrusive_ptr<C10D_Work> alltoall_base_xpu_(
+           AllToAllOptions{std::chrono::milliseconds(timeout)});
+ }
+ 
+-TORCH_LIBRARY_IMPL(c10d, XPU, m) {
+-  m.impl("alltoall_base_", alltoall_base_xpu_);
+-}
++// TORCH_LIBRARY_IMPL(c10d, XPU, m) {
++//   m.impl("alltoall_base_", alltoall_base_xpu_);
++// }
+ 
+ std::tuple<std::vector<at::Tensor>, c10::intrusive_ptr<C10D_Work>> alltoall_xpu_(
+     const at::TensorList& output_tensors,
+@@ -445,9 +449,9 @@ std::tuple<std::vector<at::Tensor>, c10::intrusive_ptr<C10D_Work>> alltoall_xpu_
+       std::move(output_tensors_vec), work);
+ }
+ 
+-TORCH_LIBRARY_IMPL(c10d, XPU, m) {
+-  m.impl("alltoall_", alltoall_xpu_);
+-}
++// TORCH_LIBRARY_IMPL(c10d, XPU, m) {
++//   m.impl("alltoall_", alltoall_xpu_);
++// }
+ 
+ c10::intrusive_ptr<C10D_Work> send_xpu(
+     at::TensorList tensors,
+@@ -459,9 +463,9 @@ c10::intrusive_ptr<C10D_Work> send_xpu(
+       ->send(tensor_vec, static_cast<int>(dstRank), static_cast<int>(tag));
+ }
+ 
+-TORCH_LIBRARY_IMPL(c10d, XPU, m) {
+-  m.impl("send", send_xpu);
+-}
++// TORCH_LIBRARY_IMPL(c10d, XPU, m) {
++//   m.impl("send", send_xpu);
++// }
+ 
+ c10::intrusive_ptr<C10D_Work> recv_xpu_(
+     at::TensorList tensors,
+@@ -473,9 +477,9 @@ c10::intrusive_ptr<C10D_Work> recv_xpu_(
+       ->recv(tensor_vec, static_cast<int>(srcRank), static_cast<int>(tag));
+ }
+ 
+-TORCH_LIBRARY_IMPL(c10d, XPU, m) {
+-  m.impl("recv_", recv_xpu_);
+-}
++// TORCH_LIBRARY_IMPL(c10d, XPU, m) {
++//   m.impl("recv_", recv_xpu_);
++// }
+ 
+ c10::intrusive_ptr<C10D_Work> recv_any_source_xpu_(
+     at::TensorList tensors,
+@@ -486,9 +490,9 @@ c10::intrusive_ptr<C10D_Work> recv_any_source_xpu_(
+       ->recvAnysource(tensor_vec, static_cast<int>(tag));
+ }
+ 
+-TORCH_LIBRARY_IMPL(c10d, XPU, m) {
+-  m.impl("recv_any_source_", recv_any_source_xpu_);
+-}
++// TORCH_LIBRARY_IMPL(c10d, XPU, m) {
++//   m.impl("recv_any_source_", recv_any_source_xpu_);
++// }
+ 
+ c10::intrusive_ptr<Work> barrier_xpu(
+     at::Tensor /* unused */,
+@@ -499,9 +503,9 @@ c10::intrusive_ptr<Work> barrier_xpu(
+       ->barrier(BarrierOptions{device_ids, std::chrono::milliseconds(timeout)});
+ }
+ 
+-TORCH_LIBRARY_IMPL(c10d, XPU, m) {
+-  m.impl("barrier", barrier_xpu);
+-}
++// TORCH_LIBRARY_IMPL(c10d, XPU, m) {
++//   m.impl("barrier", barrier_xpu);
++// }
+ } // namespace ops
+ 
+ 
+diff --git a/third_party/oneCCL b/third_party/oneCCL
+--- a/third_party/oneCCL
++++ b/third_party/oneCCL
+@@ -1 +1 @@
+-Subproject commit 3afa1bb7936f57683a2503c34b29c0daca6a9ccb
++Subproject commit 3afa1bb7936f57683a2503c34b29c0daca6a9ccb-dirty
