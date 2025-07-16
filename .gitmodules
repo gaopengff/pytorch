@@ -22,6 +22,7 @@
     ignore = dirty
     path = third_party/gloo
     url = https://github.com/gaopengff/gloo.git
+	branch = gaopengf/shm
 [submodule "third_party/NNPACK_deps/pthreadpool"]
     ignore = dirty
     path = third_party/pthreadpool
