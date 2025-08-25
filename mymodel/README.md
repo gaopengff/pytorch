@@ -19,8 +19,8 @@ python setup.py install
 
 3. Install transformers
 ```bash
-git clone https://github.com/gaopengff/flex-transformers.git -b gaopengf/flex-attn-padding
-cd flex-transformers
+git clone https://github.com/Valentine233/transformers.git -b test_flex_attn
+cd transformers
 python setup.py install
 ```
 
@@ -38,7 +38,6 @@ cd pytorch/mymodel
 Running inference with tp=6.
 
 ```bash
-export USE_SHM_ALLREDUCE=1
 export NUM_KV_HEADS=8
 
 DTYPE=bf16
