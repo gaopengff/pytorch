@@ -6,6 +6,9 @@ This is a guide for how to run LLama3.18B in tp mode with shm allreduce backend.
 1. Install required packages.
 ```bash
 pip install datasets sentencepiece psutil
+
+# Install openmp and mkl
+conda install mkl
 ```
 
 2. Install Pytorch
