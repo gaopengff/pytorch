@@ -34,6 +34,8 @@ wget -O prompt.json https://intel-extension-for-pytorch.s3.amazonaws.com/miscell
 In mymodel folder, make sure prompt.json exists in the same folder.
 ```bash
 cd pytorch/mymodel
+
+1. Run inference with launcher.py
 ```
 Running inference with tp=6.
 
@@ -68,3 +70,35 @@ python launcher.py \
     --inductor
 
 ```
+
+2. Run inference with torchrun and xeon.launch
+```bash
+export NUM_KV_HEADS=8
+
+DTYPE=bf16
+OUTPUT_TOKEN=1024
+INPUT_TOKEN=1024
+BATCH_SIZE=1
+MODEL="meta-llama/Meta-Llama-3.1-8B-Instruct"
+NUM_WARMUP=2
+NUM_ITER=4
+WORLD_SIZE=6
+
+torchrun --nproc-per-node=6 \
+    -m torch.backends.xeon.run_cpu \
+    --ncores-per-instance 40 \
+    run_llm_inference.py \
+    -m $MODEL \
+    --dtype $DTYPE \
+    --input-tokens ${INPUT_TOKEN} \
+    --max-new-tokens ${OUTPUT_TOKEN} \
+    --batch-size ${BATCH_SIZE} \
+    --num-warmup ${NUM_WARMUP} \
+    --num-iter ${NUM_ITER} \
+    --page-size 64 \
+    --profile \
+    --inductor
+
+```
+
+Note: Xeon launcher requires change of https://github.com/LifengWang/pytorch/pull/4. The current branch will keep code changes alighed with this PR.
