@@ -77,6 +77,7 @@ python launcher.py \
 2. Run inference with torchrun and xeon.launch
 ```bash
 export NUM_KV_HEADS=8
+export OMP_NUM_THREADS=40
 
 DTYPE=bf16
 OUTPUT_TOKEN=1024
