@@ -89,7 +89,8 @@ WORLD_SIZE=6
 
 torchrun --nproc-per-node=6 \
     -m torch.backends.xeon.run_cpu \
-    --ncores-per-instance 40 \
+    --bind-numa-node \
+    --throughput-mode \
     run_llm_inference.py \
     -m $MODEL \
     --dtype $DTYPE \
