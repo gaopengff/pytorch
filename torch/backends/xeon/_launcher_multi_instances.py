@@ -155,8 +155,9 @@ class MultiInstancesLauncher(Launcher):
             if k != "":
                 self.verbose("info", f"env: {k}={v}")
                 environ_local[k] = v
-        # todo: figure out why OMP_NUM_THREADS has been set to 1 already?
-        omp_num_threads = self.check_env("OMP_NUM_THREADS", len(pool))
+        # Overide OMP_NUM_THREADS(default is 1) with len(pool)
+        # omp_num_threads = self.check_env("OMP_NUM_THREADS", len(pool))
+        omp_num_threads = len(pool)
         environ_local["OMP_NUM_THREADS"] = str(omp_num_threads)
         self.verbose("info", f"env: OMP_NUM_THREADS={omp_num_threads}")
 
